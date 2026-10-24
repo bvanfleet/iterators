@@ -60,12 +60,29 @@ Operations are lazy. The callbacks in this example do not run until the result i
 | `slice(int $offset, ?int $length = null, bool $preserveKeys = false)` | Lazily yields a slice of the input.                                                            |
 | `reverse(bool $preserveKeys = true)`                                  | Reverses the input. This buffers the source because reverse order requires the complete input. |
 | `unique(?callable $keySelector = null)`                               | Yields the first item for each unique value or selector result.                                |
+| `chunk(int $length, bool $preserve_keys = false)`                     | Groups values into chunks, matching `array_chunk()`.                                           |
+| `column(int|string|null $column_key, int|string|null $index_key = null)` | Extracts a column, optionally keyed by another column, matching `array_column()`.            |
+| `flip()`                                                               | Swaps keys and values, matching `array_flip()`.                                                |
+| `combine(array $values)`                                               | Uses the source as keys and the argument as values, matching `array_combine()`.               |
+| `diff(array ...$arrays)`                                               | Keeps values absent from all other arrays, matching `array_diff()`.                           |
+| `diff_assoc(array ...$arrays)`                                          | Computes value-and-key differences, matching `array_diff_assoc()`.                            |
+| `diff_key(array ...$arrays)`                                            | Keeps entries whose keys are absent from all other arrays, matching `array_diff_key()`.        |
+| `intersect(array ...$arrays)`                                           | Keeps values present in all other arrays, matching `array_intersect()`.                       |
+| `intersect_assoc(array ...$arrays)`                                     | Keeps entries with matching keys and values, matching `array_intersect_assoc()`.              |
+| `intersect_key(array ...$arrays)`                                       | Keeps entries whose keys occur in all other arrays, matching `array_intersect_key()`.         |
+| `merge(array ...$arrays)`                                               | Merges the source with other arrays, matching `array_merge()`.                                |
+| `replace(array ...$replacements)`                                       | Replaces source values by key, matching `array_replace()`.                                    |
+| `replace_recursive(array ...$replacements)`                             | Recursively replaces source values, matching `array_replace_recursive()`.                    |
+| `pad(int $length, mixed $value)`                                        | Pads the source to the requested size, matching `array_pad()`.                                |
+
+For these array-compatible operations, the iterator source takes the place of the built-in's first array argument. Remaining arguments, including named arguments and variadic array arguments, match the built-in function. Input is materialized when the result is iterated so PHP's native array semantics are retained.
 
 ### Consumer
 
 | Method  | Description                                    |
 | ------- | ---------------------------------------------- |
 | `sum()` | Consumes numeric values and returns their sum. |
+| `count_values()` | Counts occurrences of integer and string values, like PHP's `array_count_values()`. |
 
 A consumer ends the pipeline:
 
@@ -74,6 +91,13 @@ $total = LazyIterator::from([1, 2, 3])
     ->map(fn (int $value): int => $value * 2)
     ->sum();
 // 12
+```
+
+Count occurrences with a terminal consumer:
+
+```php
+$counts = LazyIterator::from(['red', 'blue', 'red'])->count_values();
+// ['red' => 2, 'blue' => 1]
 ```
 
 ## Strategy pattern

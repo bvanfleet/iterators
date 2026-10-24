@@ -25,32 +25,31 @@ These are still valid iterator transforms even though they require state interna
 These are not lazy transforms and should not be treated as iterator operations:
 
 - `sum`
+- `count_values`
 
 A consumer ends the pipeline instead of yielding another lazy iterable.
+`count_values` returns counts for integer and string values and emits PHP's warning for unsupported values, which are skipped.
 
-## Built-in PHP array functions not currently represented
+## Implemented array-compatible operations
 
-These are the strongest candidates that match the same constraints as the current library: either lazy by default, or stateful but still valid as an iterator transform.
+These fluent operations use the corresponding PHP built-in behavior. The source iterable replaces the built-in's first array argument; remaining arguments keep the built-in's order and meaning.
 
-- `array_chunk`
-- `array_column`
-- `array_flip`
-- `array_combine`
-- `array_diff`
-- `array_diff_assoc`
-- `array_diff_key`
-- `array_intersect`
-- `array_intersect_assoc`
-- `array_intersect_key`
-- `array_count_values`
-- `array_merge`
-- `array_replace`
-- `array_replace_recursive`
-- `array_pad`
+- `chunk`
+- `column`
+- `flip`
+- `combine`
+- `diff`
+- `diff_assoc`
+- `diff_key`
+- `intersect`
+- `intersect_assoc`
+- `intersect_key`
+- `merge`
+- `replace`
+- `replace_recursive`
+- `pad`
 
-### Why these fit
-
-These can all be understood as transforms over iterable input, even if they need internal tracking or buffering to maintain the semantics of the native array function.
+The source is materialized when iterating the result, then passed to the native array function. This preserves PHP's key handling, comparison rules, and errors while still accepting generators and other iterables.
 
 ## Functions to deliberately exclude
 
@@ -83,7 +82,7 @@ They either:
 
 1. Keep the iterator library focused on transforms that yield another iterable.
 2. Treat stateful operations like `reverse` and `unique` as valid lazy operations, so long as they do not require the caller to materialize the entire collection up front.
-3. Add the missing transform-style built-ins incrementally, starting with the simplest and most obviously stream-friendly ones.
+3. Add further transform-style built-ins incrementally, verifying their behavior against the corresponding PHP functions.
 4. Keep sorting and other global-reordering functions out of the core lazy pipeline unless a separate buffering or materialization strategy is explicitly introduced.
 5. Preserve the distinction between:
    - lazy transformations, and
@@ -91,13 +90,4 @@ They either:
 
 ## Suggested next additions
 
-A sensible first wave would be:
-
-- `array_chunk`
-- `array_column`
-- `array_flip`
-- `array_diff`
-- `array_intersect`
-- `array_count_values`
-
-These are easy to reason about as iterable transforms and do not conflict with the library’s current design.
+All operations in the original array-function candidate list are now represented. Consider additional built-ins only when their native semantics fit the iterable API and can be preserved reliably.
