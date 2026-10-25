@@ -2,7 +2,6 @@
     "name": "bvanfleet/iterators",
     "description": "PHP traversable iterator library",
     "type": "library",
-    "version": "1.0.0",
     "require-dev": {
         "phpunit/phpunit": "^12.5"
     },
