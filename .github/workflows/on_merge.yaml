@@ -1,0 +1,68 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+    paths-ignore:
+      - .github/**
+      - docs/**
+
+permissions:
+  contents: write
+
+concurrency:
+  group: release-main
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify release configuration
+        env:
+          PACKAGIST_USERNAME: ${{ vars.PACKAGIST_USERNAME }}
+          PACKAGIST_API_TOKEN: ${{ secrets.PACKAGIST_API_TOKEN }}
+        run: |
+          set -euo pipefail
+          : "${PACKAGIST_USERNAME:?Set the PACKAGIST_USERNAME repository variable}"
+          : "${PACKAGIST_API_TOKEN:?Set the PACKAGIST_API_TOKEN repository secret}"
+
+          if ! git rev-parse --quiet --verify refs/tags/v1.0.0 >/dev/null; then
+            echo "::error::Create the initial v1.0.0 tag on main before enabling automatic releases."
+            exit 1
+          fi
+
+      - name: Install GitVersion
+        uses: gittools/actions/gitversion/setup@v4.7.0
+        with:
+          versionSpec: 6.8.x
+
+      - name: Calculate version
+        id: gitversion
+        uses: gittools/actions/gitversion/execute@v4.7.0
+
+      - name: Create and push release tag
+        env:
+          RELEASE_VERSION: ${{ steps.gitversion.outputs.majorMinorPatch }}
+        run: |
+          set -euo pipefail
+          tag="v${RELEASE_VERSION}"
+
+          if git rev-parse --quiet --verify "refs/tags/${tag}" >/dev/null; then
+            tagged_commit="$(git rev-parse "${tag}^{}")"
+            if [ "${tagged_commit}" != "${GITHUB_SHA}" ]; then
+              echo "::error::Tag ${tag} already exists on a different commit."
+              exit 1
+            fi
+          else
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git tag --annotate "${tag}" --message "Release ${tag}" "${GITHUB_SHA}"
+            git push origin "refs/tags/${tag}"
+          fi
